@@ -1,107 +1,105 @@
 ---
-name: review-implementation
-description: Independently review an implementation against its approved plan, acceptance criteria, repository rules, and actual diff. Use when the user asks to review, QA, or approve a task, or when a task in `.agents/state/tasks.md` is ready for review.
+name: implement-plan
+description: Implement or revise an approved coding task from an existing plan and persist implementation evidence for independent review. Use when the user asks to implement, build, code, or address review findings for a task represented by a plan in `.agents/plans/`.
 metadata:
-  short-description: Review an implementation
+  short-description: Implement an approved plan
 ---
 
-# Review Implementation
+# Implement Plan
 
 ## Goal
 
-Independently verify that an implementation satisfies its approved plan and
-acceptance criteria, remains within scope, follows repository standards, and
-has sufficient validation before approval.
+Turn one approved plan into working, verified code while preserving its scope
+and producing a factual implementation report for an independent Reviewer.
 
-The review must produce an actionable report that an Implementer can use
-without depending on conversation history.
+The implementation must not depend on conversation history for handoff.
+
+This skill supports:
+
+- Initial implementation of a planned task
+- Targeted corrections after review changes are requested
 
 ## Role boundary
 
-You are the Reviewer.
+You are the Implementer.
 
 You may:
 
-- Read repository files and task artifacts.
-- Inspect Git history, branches, worktrees, and diffs.
-- Run non-destructive validation commands.
+- Modify application code required by the approved plan.
+- Add or update tests required by the approved plan.
+- Modify relevant configuration when required by the approved plan.
+- Run development and validation commands.
 - Create or update:
-  - `.agents/reviews/<task-id>.md`
+  - `.agents/implementations/<task-id>.md`
   - the matching entry in `.agents/state/tasks.md`
+
+You may create the parent directories required for these permitted artifacts:
+
+- `.agents/implementations/`
+- `.agents/state/`
+
+Creating these directories does not permit writing unrelated files inside
+`.agents/`.
 
 You must not:
 
-- Modify application code.
-- Modify tests, configuration, migrations, or dependencies.
 - Rewrite or append to the approved plan.
-- Rewrite the implementation report.
-- Fix issues yourself.
-- Expand the approved feature scope.
-- Approve work you implemented in the same role or session.
-- Commit, push, merge, deploy, or create releases.
-- Run destructive database or filesystem commands.
-- Run formatting, lint-fix, migration, or other commands that write to source
-  files.
+- Change the feature scope without explicit approval.
+- Approve your own implementation.
+- Move a task to `approved` or `done`.
+- Write or modify a review report.
+- Modify unrelated files.
+- Discard, overwrite, reset, clean, or stash existing user changes.
+- Commit, push, merge, or deploy unless explicitly requested.
+- Perform destructive database operations.
+- Install or upgrade dependencies unless required by the approved plan and
+  explicitly permitted by the user and repository rules.
 
-The following task artifacts are read-only:
+The following files belong to other roles and are read-only:
 
 - `.agents/plans/<task-id>.md`
-- `.agents/implementations/<task-id>.md`
-
-The Reviewer owns:
-
 - `.agents/reviews/<task-id>.md`
 
 ## Source-of-truth order
 
-Review the task against these sources, in order:
+Follow the instruction hierarchy defined by the applicable `AGENTS.md` files.
 
-1. Current user instructions
-2. Applicable `AGENTS.md` files
-3. Approved plan
-4. Feature brief or linked requirements, when present
-5. Relevant `.agents/rules/` documents
-6. Existing repository architecture and conventions
+Within task artifacts, use this order:
 
-Use the actual Git diff as the source of truth for what was implemented.
+1. Feature brief or linked requirements
+2. Approved plan
+3. Latest review report, when fixing requested changes
+4. Previous implementation reports
+5. Existing repository architecture and conventions
 
-Use the implementation report as supporting evidence only. Never substitute the
-implementation summary for inspecting the code.
+The approved plan must remain consistent with applicable repository rules and
+feature requirements.
 
-If instructions conflict materially, do not silently choose one. Record the
-conflict and return `review-blocked` when a responsible verdict cannot be made.
+If the current user instruction materially changes the approved scope,
+acceptance criteria, architecture, security behavior, data behavior, or public
+API:
+
+- Do not silently expand the implementation.
+- Stop and request that the plan be revised or explicitly re-approved.
+- Continue only after the changed scope is recorded in the approved plan.
+
+Small clarifications that do not change scope may proceed without plan
+revision.
+
+If a conflict materially affects implementation, stop and report:
+
+- The conflicting instructions
+- The affected plan item or acceptance criterion
+- The implementation impact
+- The safest recommended resolution
 
 ## Workflow
 
 ### 1. Locate the task
 
-Use the task ID supplied by the user.
+Use the task ID or plan path supplied by the user.
 
-When no task ID is supplied:
-
-1. Read `.agents/state/tasks.md`.
-2. Find entries with:
-   - `Status: ready-for-review`
-   - `Owner: reviewer`
-3. If exactly one task matches, use it.
-4. If more than one task matches, ask one concise multiple-choice question.
-5. If no task matches, stop and report that no task is ready for review.
-
-Do not select a task marked:
-
-- `planned`
-- `in-progress`
-- `blocked`
-- `changes-requested`
-- `approved`
-- `done`
-
-unless the user explicitly requests review of that task.
-
-### 2. Verify required artifacts
-
-Read the following files in full:
+Accept only task IDs matching:
 
 ```text
-.agents/plans/<task-id>.md
-.agents/implementations/<task-id>.md
+YYYYMMDD-kebab-case-slug
